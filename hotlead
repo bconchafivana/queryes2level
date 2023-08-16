@@ -1,0 +1,57 @@
+select d.client_rut, 
+        d.client_name,
+           d.debtor_rut,
+           d.debtor_name,
+           c.comercial_executive_id, c.comercial_executive_name,
+           date(FROM_UNIXTIME(d.emission)) as emission_date, 
+           DATEDIFF(CURRENT_DATE(), FROM_UNIXTIME(d.emission)) as days_from_emission,
+           d.original_amount,
+           d.error,
+           d.cesion_statuses,
+           d.debtor_category,
+           row_number() over (partition by d.client_rut order by d.emission_utc  desc) as lasts_emissions,
+           d.cesion_owner, d.cesion_owner_name,
+           CASE WHEN d.client_rut in ('76426454-1', '76473504-8', '76742321-7', '76029213-3', '77055784-4', '76961218-1', '76124037-4', '77083221-7') THEN 1
+           ELSE 0 END AS bad_client_related,
+           da.season_index, da.cede_proportion, da.cede_proportion_par, da.factorings, 
+           da.nc_proportion, da.n_ops, da.client_demanded, da.debtor_demanded,
+           c.sii_connected, c.status, c.allowed_operate, ifnull(recu.recurrency, 0) as recurrency
+    from fc_documents d 
+    
+left join (
+select si.client_rut, pa.debtor_rut , si.season_index , pc.cede_proportion , 
+pa.cede_proportion as cede_proportion_par, pa.factorings , pa.nc_proportion ,
+ pa.n_ops , 
+ cd.client_demanded, dd.debtor_demanded
+from bc_seasonality_income si
+left join bc_proporcion_cedida pc on pc.client_rut = si.client_rut 
+left join bc2_par_analytics pa on pa.client_rut = si.client_rut 
+left join (
+select client_rut , 1 as client_demanded
+from fc_documents d
+where judicial_cause_role_name is not null and d.status = 2 
+group by client_rut 
+) cd on cd.client_rut = si.client_rut 
+left join (
+select debtor_rut , 1 as debtor_demanded
+from fc_documents d
+where promissory_notes_cause_role_name is not null and d.status = 2 
+group by debtor_rut 
+) dd on dd.debtor_rut = pa.debtor_rut 
+) da on da.client_rut = d.client_rut and da.debtor_rut = d.debtor_rut 
+ left join fc_customers c on c.customer_id = d.client_rut
+ left join (SELECT
+    d.client_rut,
+    CASE
+        WHEN DATEDIFF(CURDATE(), MAX(d.abonado_date)) > 365 THEN 1
+        WHEN DATEDIFF(CURDATE(), MAX(d.abonado_date)) <= 365 THEN 2
+        ELSE 0
+    END AS recurrency
+FROM fc_documents d
+WHERE d.backoffice_status IN ('His', 'Vig', 'Mor')
+GROUP BY d.client_rut) recu on recu.client_rut = d.client_rut 
+ left join fc_blacklists bk_client on bk_client.rut = d.client_rut 
+ left join fc_blacklists bk_debtor on bk_debtor.rut = d.debtor_rut  
+ 
+    	WHERE date(FROM_UNIXTIME(d.emission)) >= CURRENT_DATE() - INTERVAL '15' DAY and date(FROM_UNIXTIME(d.emission)) < CURRENT_DATE() + INTERVAL '1' DAY
+    	and bk_client.rut is null and bk_debtor.rut is null
