@@ -56,4 +56,5 @@ GROUP BY d.client_rut) recu on recu.client_rut = d.client_rut
  
     	WHERE date(FROM_UNIXTIME(d.emission)) >= CURRENT_DATE() - INTERVAL '15' DAY and date(FROM_UNIXTIME(d.emission)) < CURRENT_DATE() + INTERVAL '1' DAY
     	and bk_client.rut is null and bk_debtor.rut is null and (d.has_annulment_nc != 1 or d.sii_reclaimed != 1) and (d.deleted is null or d.deleted =0 )
+
  
