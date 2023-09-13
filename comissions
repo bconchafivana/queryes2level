@@ -1,0 +1,8 @@
+select e.name , sum(dp.finance_amount) as finance_amount, round(sum(profit*proportion_valid_payed)) as profit, sum(fund_cost) as fund_cost,
+sum(CASE WHEN dp.proportion_valid_payed = 1 then comission
+	ELSE 0.5*dp.proportion_valid_payed*comission END) as comission,
+30*sum(dp.daily_rate*dp.delta_days_payment*dp.finance_amount)/sum(dp.delta_days_payment*dp.finance_amount) as rate_perceived
+from ds_perceived dp
+left join fc_executives e on e.executive_id = dp.comercial_executive_id
+where yearmonth_payment_accountant = '202308' and dp.mora_days_accountant < 61
+group by dp.comercial_executive_id
