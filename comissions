@@ -1,11 +1,10 @@
-select e.name , sum(dp.finance_amount) as finance_amount, round(sum(profit*proportion_valid_payed)) as profit, sum(fund_cost) as fund_cost,
-sum(CASE WHEN dp.proportion_valid_payed = 1 then comission2
-	ELSE 0.5*dp.proportion_valid_payed*comission2 END) as comission,
-30*sum(dp.daily_rate_profit*dp.delta_days_payment*dp.finance_amount)/sum(dp.delta_days_payment*dp.finance_amount) as rate_perceived, 
-30*sum(dp.daily_rate*dp.delta_days_payment*dp.finance_amount)/sum(dp.delta_days_payment*dp.finance_amount) as rate_perceived, 
-avg(delta_days_payment)
-from ds_perceived dp
-left join fc_executives e on e.executive_id = dp.comercial_executive_id
-where yearmonth_payment_accountant = '202308' and dp.mora_days_accountant < 61
-group by dp.comercial_executive_id
+select dp.revenue_real, dp.document_id, dp.folio, dp.document_type_name, dp.payment_date_accountant, dp.payment_date, dp.yearmonth_payment_accountant, dp.valid_payment_amount, 
+dp.comercial_executive_id, dp.client_rut, dp.client_name, dp.debtor_rut, dp.debtor_name, dp.mora_days, dp.expiration_days, dp.proportion_valid_payed*dp.profit_executive as profit,
+dp.fund_cost_executive as fund_cost,
+case when dp.proportion_valid_payed = 1 and dp.comission2 > 0  and dp.mora_days < 61 then dp.comission2
+	when dp.proportion_valid_payed < 1 and dp.comission2 > 0 and dp.mora_days < 61 then 0.5*dp.proportion_valid_payed*dp.comission2 
+	else 0 end as comission
+	
+from ds_perceived dp 
+where dp.yearmonth_payment_accountant > 202308
 
