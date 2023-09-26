@@ -1,8 +1,8 @@
 select dp.revenue_real, dp.document_id, dp.folio, dp.document_type_name, dp.payment_date_accountant, dp.payment_date, dp.yearmonth_payment_accountant, dp.valid_payment_amount, 
 dp.comercial_executive_id, dp.client_rut, dp.client_name, dp.debtor_rut, dp.debtor_name, dp.mora_days, dp.expiration_days, dp.proportion_valid_payed*dp.profit_executive as profit,
 dp.fund_cost_executive as fund_cost,
-case when dp.proportion_valid_payed = 1 and dp.comission2 > 0  and dp.mora_days < 61 then dp.comission2
-	when dp.proportion_valid_payed < 1 and dp.comission2 > 0 and dp.mora_days < 61 then 0.5*dp.proportion_valid_payed*dp.comission2 
+case when dp.proportion_valid_payed = 1 and dp.comission2 > 0  and dp.mora_days_executive < 61 then dp.comission2
+	when dp.proportion_valid_payed < 1 and dp.comission2 > 0 and dp.mora_days_executive < 61 then 0.5*dp.proportion_valid_payed*dp.comission2 
 	else 0 end as comission
 	
 from ds_perceived dp 
