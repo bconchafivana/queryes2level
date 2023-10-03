@@ -1,0 +1,20 @@
+ with coms as (
+ select dp.revenue, dp.document_id, dp.folio, dp.document_type_name, dp.payment_date_accountant, dp.payment_date, dp.daily_rate ,
+ dp.yearmonth_payment_accountant, dp.valid_payment_amount, dp.total_payment_amount , dp.finance_amount , dp.delta_days_payment ,
+dp.comercial_executive_id, dp.client_rut, dp.client_name, dp.debtor_rut, dp.debtor_name, dp.mora_days, dp.expiration_days, dp.proportion_valid_payed*dp.profit_executive as profit,
+dp.fund_cost_executive as fund_cost,
+case when dp.proportion_valid_payed = 1 and dp.revenue_executive > 0  and dp.mora_days_executive < 61 then round(0.085*dp.revenue_executive)
+	when dp.proportion_valid_payed < 1 and dp.revenue_executive > 0 and dp.mora_days_executive < 61 then round(0.5*dp.proportion_valid_payed*0.085*dp.revenue_executive)
+	else 0 end as comission
+	from ds_perceived2 dp
+where dp.yearmonth_payment_accountant > 202300
+ )
+ select e.name, c.comercial_executive_id, c.yearmonth_payment_accountant , sum(c.finance_amount) as finance_amount ,
+ sum(profit) as profit, sum(c.fund_cost) as fund_cost, 
+ 30*100*sum(daily_rate*finance_amount*delta_days_payment)/sum(finance_amount*delta_days_payment) as rate_perceived, 
+ avg(delta_days_payment) as days_payment_avg, count(distinct client_rut) as n_clients, count(*) as n_docs,
+ sum(c.comission) as comision, 
+ sum(valid_payment_amount) as valid_payment_amount , sum(total_payment_amount) as total_payment_amount
+ from coms c
+ left join fc_executives e on e.executive_id = c.comercial_executive_id
+ group by c.comercial_executive_id, c.yearmonth_payment_accountant
